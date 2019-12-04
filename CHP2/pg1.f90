@@ -35,7 +35,7 @@ program programme
 	allocate(x((Nx+2)))
 	allocate(xn((Nx+2)*(Ny+2)/2))
 	allocate(ssm((Nx+2)*(Ny+2)/2))
-	Nt=5
+	Nt=0
 	r=0
 	x=0.d0
 	y=0.d0
@@ -129,15 +129,17 @@ end if
 call Rename(Me,name)
 
 if(me==0) then
-	open(unit=2, file="sol.dat",access="append",form="formatted")
+	call Rename(Me,name)
+	open(unit=2, file=name,access="append",form="formatted")
 	do i=1,(Nx+2)/2
 		do j=1,(Ny+2)/2
-			!write(2,*)x(i),y(j),ssm(i+(j-1)*(Nx+2))
+			write(2,*)x(i),y(j),ssm(i+(j-1)*(Nx+2))
 		enddo
 	enddo
 	close(2)
 else if(me==1) then
-	open(unit=2, file="sol.dat",access="sequential",form="formatted")
+	call Rename(Me,name)
+	open(unit=2, file=name,access="append",form="formatted")
 		do i=1,(Nx+2)/2
 			do j=1,(Ny+2)/2
 				write(2,*)x(i+(Nx+2)/2),y(j),xn(i+(j-1)*(Nx+2))
