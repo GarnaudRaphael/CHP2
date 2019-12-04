@@ -7,122 +7,122 @@ module matrices
 
 		contains
 
-			subroutine matrice(Nx,Ny,hx,hy,nnz,colonnes,ic,D,i1,iN,dt)
-			use mpi
-			implicit none
-			integer,intent(in)::Nx,Ny
-			integer::i,j,cont,diim,Np,me,statinfo,i1,iN,n1,n2,n3
-			double precision,intent(in) :: hx,hy,dt,D
-			double precision,dimension(:),allocatable::nnz,colonnes,ic
-			double precision,dimension(:,:),allocatable::A,AA
 
-			double precision,dimension(Nx+2)::x
-			double precision, dimension(Ny+2)::y
+						subroutine matrice(Nx,Ny,hx,hy,nnz,colonnes,ic,D,i1,iN,dt)
+						use mpi
+						implicit none
+						integer,intent(in)::Nx,Ny
+						integer::i,j,cont,diim,Np,me,statinfo,i1,iN,n1,n2,n3
+						double precision,intent(in) :: hx,hy,dt,D
+						double precision,dimension(:),allocatable::nnz,colonnes,ic
+						double precision,dimension(:,:),allocatable::A,AA
 
-
-
-
-				call MPI_COMM_RANK(MPI_COMM_WORLD,me,statinfo)
-				call MPI_COMM_SIZE(MPI_COMM_WORLD,Np,statinfo)
-				allocate (A(Nx*Ny,Nx*Ny))
+						double precision,dimension(Nx+2)::x
+						double precision, dimension(Ny+2)::y
 
 
 
-				call laplacien(Nx-2,Ny-2,hx,hy,dt,D,A)
+
+							call MPI_COMM_RANK(MPI_COMM_WORLD,me,statinfo)
+							call MPI_COMM_SIZE(MPI_COMM_WORLD,Np,statinfo)
+
+							allocate (A((Nx+2)*(Ny+2),(Nx+2)*(Ny+2)))
 
 
-! nombre d'éléments non nuls dans la matrice
-				!print*,"size(A)",size(A)
-
-				diim=0
-				!do i=1,(Nx+2)*(Ny+2)
-				do i=1,Nx*Ny
-					do j=1,Nx*Ny
-						if (A(i,j)/=0) then
-							diim=diim+1
-						end if
-					end do
-				end do
-! construction de la matrice csr
-				allocate (nnz(diim))
-				allocate (colonnes(diim))
-				cont=0
-				allocate (ic( iN-i1+2))
-
-				!do i=1,(Nx+2)*(Ny+2)
-				do i=1,Nx*Ny
-					ic(i)=(cont+1)
-					do j=1,Nx*Ny
-						if (A(i,j)/=0) then
-							cont=cont+1
-							nnz(cont)=A(i,j)
-							colonnes(cont)=j
-						end if
-					end do
-				end do
-				ic(Nx*Ny)=cont+1
-
-!				n3=size(nnz)
-!				open(unit=5, file="ic.txt",form="formatted",access="sequential")
-!					do i=1,n3
-!							write(5,*)ic(i)
-!					enddo
-!					close(5)
-				deallocate(A)
+							call laplacien(Nx,Ny,hx,hy,dt,D,A)
 
 
-			end subroutine matrice
+			! nombre d'éléments non nuls dans la matrice
 
-			subroutine laplacien(Nx,Ny,dx,dy,dt,D,M)
-			  implicit none
-			  integer :: i,Nx,Ny,n
-			  double precision :: h,dx,dy,dt,D
-			  double precision, dimension(:,:), allocatable :: A,B
-			  double precision, dimension(:,:), allocatable :: M,K
-			  allocate(A(1:Nx+2,1:Nx+2));allocate(B(1:Nx+2,1:Nx+2));allocate(K(1:Nx+2,1:3*(Nx+2)));!allocate(M(1:(Nx+2)*(Ny+2),1:(Nx+2)*(Ny+2)));
-			  M=0.d0
-			  A=0.d0
-			  K=0.d0
-				B=0.d0
-			  A(1,1)=1.0
-			  do i=2,Nx+1
-			    A(i,i-1)=-dt*(1.0/(dx*dy))
-			    A(i,i)=1+2*dt*(1.0/(dx**2))+2*dt*(1.0/(dy**2))
-			    A(i,i+1)=-dt*(1.0/(dx*dy))
-			  enddo
-			  A(Nx+2,Nx+2)=1.0
-			  do i=2,Nx+1
-			    B(i,i)=-dt*1.0/(dx*dy)
-			  enddo
-			  !open(unit=2, file="A.txt",form="formatted",access="sequential")
-			  !do i=1,n+1
-			  !  write(2,*)A(i,:)
-			  !enddo
-			  !close(2)0
-			  K(:,1:Nx+2)=B
-			  K(:,Nx+3:2*(Nx+2))=A
-			  K(:,2*(Nx+2)+1:3*(Nx+2))=B
 
-			  do i=1,Ny
-			    !M(i*(Nx+1)+1:(i+1)*(Nx+1),(i-1)*(Nx+1)+1:(i+2)*(Nx+1))=K
-					M(i*(Nx+2)+1:(i+1)*(Nx+2),(i-1)*(Nx+2)+1:(i+2)*(Nx+2))=K
-			  enddo
-				do i=1,Nx+2
-						M(i,i)=1.0
-						M(i+(Ny+1)*(Nx+2),i+(Ny+1)*(Nx+2))=1.0
-				enddo
-			  !M(:(n+1)**2,n*(n+1):(n+1)**2)=1
-			  !print*,M
-!				open(unit=6, file="M.txt",form="formatted",access="sequential")
-!					do i=1,(Nx+2)*(Ny+2)
-!							write(6,*)M(i,:)
-!					enddo
-!					close(6)
-			  deallocate(A)
-			  deallocate(B)
-			  deallocate(K)
-			return
-			end subroutine
+							diim=0
+							do i=1,(Nx+2)*(Ny+2)
+								do j=1,(Nx+2)*(Ny+2)
+									if (A(i,j)/=0) then
+										diim=diim+1
+									end if
+								end do
+							end do
+			! construction de la matrice csr
+							allocate (nnz(diim))
+							allocate (colonnes(diim))
+							cont=0
+							allocate (ic( iN-i1+2))
+
+							do i=1,(Nx+2)*(Ny+2)
+								ic(i)=(cont+1)
+								do j=1,(Nx+2)*(Ny+2)
+									if (A(i,j)/=0) then
+										cont=cont+1
+										nnz(cont)=A(i,j)
+										colonnes(cont)=j
+									end if
+								end do
+							end do
+							ic(iN-i1+2)=cont+1
+
+			!				n3=size(nnz)
+			!				open(unit=5, file="ic.txt",form="formatted",access="sequential")
+			!					do i=1,n3
+			!							write(5,*)ic(i)
+			!					enddo
+			!					close(5)
+							deallocate(A)
+
+
+						end subroutine matrice
+
+
+									subroutine laplacien(Nx,Ny,dx,dy,dt,D,M)
+									  implicit none
+									  integer :: i,Nx,Ny,n
+									  double precision :: h,dx,dy,dt,D
+									  double precision, dimension(:,:), allocatable :: A,B
+									  double precision, dimension(:,:), allocatable :: M,K
+									  allocate(A(1:Nx+2,1:Nx+2));allocate(B(1:Nx+2,1:Nx+2));allocate(K(1:Nx+2,1:3*(Nx+2)));!allocate(M(1:(Nx+2)*(Ny+2),1:(Nx+2)*(Ny+2)));
+									  M=0.d0
+									  A=0.d0
+									  K=0.d0
+										B=0.d0
+									  A(1,1)=1.0
+									  do i=2,Nx+1
+									    A(i,i-1)=-dt*(1.0/(dx*dy))
+									    A(i,i)=1+2*dt*(1.0/(dx**2))+2*dt*(1.0/(dy**2))
+									    A(i,i+1)=-dt*(1.0/(dx*dy))
+									  enddo
+									  A(Nx+2,Nx+2)=1.0
+									  do i=2,Nx+1
+									    B(i,i)=-dt*1.0/(dx*dy)
+									  enddo
+									  !open(unit=2, file="A.txt",form="formatted",access="sequential")
+									  !do i=1,n+1
+									  !  write(2,*)A(i,:)
+									  !enddo
+									  !close(2)0
+									  K(:,1:Nx+2)=B
+									  K(:,Nx+3:2*(Nx+2))=A
+									  K(:,2*(Nx+2)+1:3*(Nx+2))=B
+
+									  do i=1,Ny
+									    !M(i*(Nx+1)+1:(i+1)*(Nx+1),(i-1)*(Nx+1)+1:(i+2)*(Nx+1))=K
+											M(i*(Nx+2)+1:(i+1)*(Nx+2),(i-1)*(Nx+2)+1:(i+2)*(Nx+2))=K
+									  enddo
+										do i=1,Nx+2
+												M(i,i)=1.0
+												M(i+(Ny+1)*(Nx+2),i+(Ny+1)*(Nx+2))=1.0
+										enddo
+									  !M(:(n+1)**2,n*(n+1):(n+1)**2)=1
+									  !print*,M
+!										open(unit=6, file="M.txt",form="formatted",access="sequential")
+!											do i=1,(Nx+2)*(Ny+2)
+!													write(6,*)M(i,:)
+!											enddo
+!											close(6)
+									  deallocate(A)
+									  deallocate(B)
+									  deallocate(K)
+									return
+									end subroutine
 
 
 			subroutine laplaciencsr(hx,hy,dt,ic,colonnes,nnz,Nx,Ny)
@@ -227,19 +227,19 @@ module matrices
 				!do j=1,Ny+2 ! dimension Nx+2
 				!	do i=1,Nx+2
 
-				do j=1,(Ny+2)/2 ! dimension Nx+2
-					do i=1,(Ny+2)/2
+				do j=1,(Ny+2)
+					do i=1,(Ny+2)
 						k=i+(j-1)*(Nx+2)
 						if (i==1) then!bas
 							ssm(k)=0
-						else if (i==(Nx+2)/2) then!haut
+						else if (i==(Nx+2)) then!haut
 							ssm(k)=0
 						else if ((j==1)) then!gauche
 							ssm(k)=0
-						else if (j==(Ny+2)/2) then!droite
+						else if (j==(Ny+2)) then!droite
 							ssm(k)=0
 						else
-							ssm(k)=f1(x(i),y(j))*dt + u(k)
+							ssm(k)=f1(x(i),y(j))
 						end if
 					end do
 				end do
@@ -247,7 +247,7 @@ module matrices
 				!call MPI_RECV(ssm(haut(2:Nx-1)),Nx,MPI_DOUBLE_PRECISION,1,tag0,MPI_COMM_WORLD,status,statinfo)
 !				open(unit=1, file="sm1.txt",form="formatted",access="sequential")
 !					do i=1,Nx+2
-!						do j=1,Ny+2
+!									if(me==0) then	do j=1,Ny+2
 !							write(1,*)ssm(i+(j-1)*(Nx+2)),i,j
 !						enddo
 !					enddo
@@ -273,22 +273,20 @@ end subroutine sm11
 				ssm=0.d0
 				bas=0
 				haut=0
-				do j=1,(Ny+2)/2 ! dimension Nx+2
-					do i=1,(Nx+2)/2
-						k=i+(j-1)*(Nx+2)
-						if (i==1) then!bas
+				do j=1,(Ny+2) !
+					do i=1,(Nx+2)
+						k=i+(j-1)*(Nx+2)!
+						if (i==1) then!bas normalement ça devrait être i=(Nx+2)/2 mais on le rajoute dans l'expression de x
 							ssm(k)=0.d0
-						else if (i==(Nx+2)/2) then!haut
+						else if (i==(Nx+2)) then!haut
 							ssm(k)=0.d0
 						else if ((j==1)) then!gauche
-							bas(i)=k-r*(Nx)
 							ssm(k)=0.d0
-						else if (j==Ny) then!droit
-							!print*,i,k-r*(Nx+2)
-							haut(i)=k+r*(Nx)
+						else if (j==(Ny+2)) then!droite
 							ssm(k)=0.d0
 						else
-							ssm(k)=u(k)+f1(x(i+(Nx+2)/2),y(j))*dt
+							!print*,"i = ",i," j = ",j
+							ssm(k)=f1(x(i-r+(Nx+2)/2),y(j-r))!on fait le recouvrement
 						end if
 					end do
 				end do

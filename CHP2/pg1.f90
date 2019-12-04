@@ -6,7 +6,7 @@ program programme
 	implicit none
 		character*13 ::name
 	integer,parameter :: Nx=100,Ny=100,NxNy=Nx*Ny
-	integer::j1,jN,k1,k2,k3,j,i,i1,iN,statinfo,Np,me,cont,diim,Nt,n2,n5,n1=4,k,r
+	integer::j1,jN,k1,k2,k3,j,i,i1,iN,statinfo,Np,me,cont,diim,Nt,n2,n5,n1=4,k,r,Nx2,Ny2
 	double precision,parameter :: hx=1.d0/(Nx+1),hy=1.d0/(Ny+1),Lx=1.d0,Ly=1.d0,dt=0.01d0,D=1.d0
 	double precision, dimension(:),allocatable :: b,xn,ssm,ssme,produitmatriciel,v,vv,nnz,colonnes,ic,xx,xn1,xn2,ssm1,ssm2
 	double precision, dimension(:),allocatable :: solutionexacte,smf,U,Uo,Uinitial,xk
@@ -33,9 +33,9 @@ program programme
 	!allocate (Uo2((Nx+2)*(Ny+2)))
 	allocate(y((Ny+2)))
 	allocate(x((Nx+2)))
-	allocate(xn((Nx+2)*(Ny+2)/2))
-	allocate(ssm((Nx+2)*(Ny+2)/2))
-	Nt=0
+	allocate(xn((Nx/2+2)*(Ny/2+2)))
+	allocate(ssm((Nx/2+2)*(Ny/2+2)))
+	Nt=1
 	r=0
 	x=0.d0
 	y=0.d0
@@ -71,7 +71,7 @@ end if
 	if(me==0) then
 	do j=1,(Ny+2)/2
 		do i=1,(Ny+2)/2
-			k=i+(j-1)*(Nx+2)
+			k=i+(j-1)*(Nx+2)/2
 			if (i==1) then!bas
 				ssm(k)=0
 			else if (i==(Nx+2)/2) then!haut
@@ -89,7 +89,7 @@ end if
 else if(me==1) then !x-> i et y-> j
 	do j=1,(Ny+2)/2 !
 		do i=1,(Nx+2)/2
-			k=i+(j-1)*(Nx+2)!
+			k=i+(j-1)*(Nx+2)/2!
 			if (i==1) then!bas normalement ça devrait être i=(Nx+2)/2 mais on le rajoute dans l'expression de x
 				ssm(k)=0.d0
 			else if (i==(Nx+2)/2) then!haut
@@ -106,48 +106,50 @@ else if(me==1) then !x-> i et y-> j
 	end do
 end if
 
-	call matrice(Nx/2+1,Ny/2+1,hx,hy,nnz,colonnes,ic,D,i1,iN,dt)
+
+	Nx2=Nx/2;
+	Ny2=Ny/2;
+	call matrice(Nx2,Ny2,hx,hy,nnz,colonnes,ic,D,i1,iN,dt)
 	!call sm1(x,y,Nx,Ny,ssm,dt,Uo,hx,hy)
 
 
 	!print*,"hey"
 	do i=1,Nt
 		if(me==0) then
-		call gc(nnz,colonnes,ic,ssm,(Nx+2)*(Ny+2)/2,Nx/2+1,Ny/2+1,xn)! comme il n'y pas pas deux point extérieur mais un seul on inclu dans le Nx le point extérieur
-		call sm11(x,y,Nx,Ny,ssm,dt,xn,hx,hy)
+		call gc(nnz,colonnes,ic,ssm,(Nx2+2)*(Ny2+2),Nx2,Ny2,xn)! comme il n'y pas pas deux point extérieur mais un seul on inclu dans le Nx le point extérieur
+		call sm11(x,y,Nx2,Ny2,ssm,dt,xn,hx,hy)
 		!xn=ssm
 		!call sm11(x,y,Nx,Ny,ssm,dt,xn,hx,hy)
 	else if(me==1) then
-		call gc(nnz,colonnes,ic,ssm,(Nx+2)*(Ny+2)/2,Nx/2+1,Ny/2+1,xn)
-		call sm12(x,y,Nx,Ny,ssm,dt,xn,hx,hy)
+		call gc(nnz,colonnes,ic,ssm,(Nx2+2)*(Ny2+2),Nx2,Ny2,xn)
+		call sm12(x,y,Nx2,Ny2,ssm,dt,xn,hx,hy)
 	end if
 	end do
 	!print*,x
-	!xn=ssm
 	!print*,maxval(U)
 !print*,"what"
-call Rename(Me,name)
 
+call Rename(Me,name)
+!xn=ssm
 if(me==0) then
 	call Rename(Me,name)
-	open(unit=2, file=name,access="append",form="formatted")
+	open(unit=1, file=name,access="sequential",form="formatted")
 	do i=1,(Nx+2)/2
 		do j=1,(Ny+2)/2
-			write(2,*)x(i),y(j),ssm(i+(j-1)*(Nx+2))
+			write(1,*)x(i),y(j),xn(i+(j-1)*(Nx+2)/2)
 		enddo
 	enddo
-	close(2)
+	close(1)
 else if(me==1) then
 	call Rename(Me,name)
-	open(unit=2, file=name,access="append",form="formatted")
+	open(unit=2, file=name,access="sequential",form="formatted")
 		do i=1,(Nx+2)/2
 			do j=1,(Ny+2)/2
-				write(2,*)x(i+(Nx+2)/2),y(j),xn(i+(j-1)*(Nx+2))
+				write(2,*)x(i+(Nx+2)/2),y(j),xn(i+(j-1)*(Nx+2)/2)
 			enddo
 		enddo
 		close(2)
 end if
-
 
 	temps_fin= (MPI_WTIME()-temps_debut)
 	deallocate (x)

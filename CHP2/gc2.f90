@@ -15,8 +15,7 @@ module gradientconjugue
           allocate (pkA(NxNy))
           allocate (pk(NxNy))
           allocate(Ap(NxNy))
-          !print*,"size(pk)",size(pk)
-          e=0
+          e=2
           d=4
           xk=0!x0=0
           rk = b
@@ -24,7 +23,6 @@ module gradientconjugue
           k=0
           do while(norm2(rk)>10**(-e))
             call produitvec(Nx,Ny,rk,rk,rkrk,statinfo,me,i1,iN)
-            !print*,"size(pk) = ",size(pk)
             call produitmat(nnz,colonnes,ic,pk,Nx,Ny,pkA,i1,iN,statinfo)
             call produitvec(Nx,Ny,pkA,pk,pkAp,statinfo,me,i1,iN)
             alphak=rkrk/pkAp
@@ -37,12 +35,13 @@ module gradientconjugue
             pk=rk+betak*pk
             k=k+1
           !  print*,rk
+          !print*," norm2(Rk) = ",norm2(rk)
             if(k>10**d)then
               print*,"erreur"
               exit
             end if
           end do
-          !print*," k = ",k," x = ",xk
+
           deallocate(pkA)
           deallocate(Ap)
           deallocate(rk)
@@ -62,12 +61,13 @@ module gradientconjugue
       produitmatriciel=0
       !print*,"xx = ",xx
       !open(unit=7, file="bm1.txt",form="formatted",access="sequential")
-      do i=1,(Nx+2)*(Ny+2)
+      !do i=1,(Nx+2)*(Ny+2)
+      print*,"Nx*Ny = ",Nx*Ny
+      do i=1,Nx*Ny
         produitmatriciel(i)=0
         k1=ic(i)!indice du première éléments non nul de la ligne
         k2=ic(i+1)-1!indice du dernière éléement de la lgine non nul
         do j=k1,k2
-          !print*,"size(XX) = ",size(xx)
           k3=(colonnes(j))!colonnes de la matrice qui correspond à l'indice dans x
           produitmatriciel(i)=produitmatriciel(i) +nnz(j)*xx(k3)!j correponds à l'indice de la colonnes considérée
         !  write(7,*)produitmatriciel(i),nnz(j),k3,xx(k3)
@@ -83,7 +83,8 @@ module gradientconjugue
       double precision:: pv,produitvectoriel
 
       produitvectoriel=0
-      do i=1,(Nx+2)*(Ny+2)
+      !do i=1,(Nx+2)*(Ny+2)
+      do i=1,Nx*Ny
         produitvectoriel= produitvectoriel + v(i)*vv(i)
       end do
 
